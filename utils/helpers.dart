@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../providers/settings_provider.dart' as settings;
 
 final GlobalKey<ScaffoldMessengerState> snackbarKey = GlobalKey<ScaffoldMessengerState>();
+
+dynamic getSetting(String name) => settings.getSetting(name);
 
 String replaceParamsApiRoute(
     String apiRoute,
