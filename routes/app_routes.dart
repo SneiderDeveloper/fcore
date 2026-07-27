@@ -13,7 +13,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 final RouteObserver<ModalRoute<void>> defaultRouteObserver = RouteObserver<ModalRoute<void>>();
-final int sliderId = int.tryParse(dotenv.env['SLIDER_ID'] ?? '') ?? 0;
+final String onboardingSystemName = dotenv.env['ONBOARDING_SYSTEM_NAME'] ?? '';
 GoRouter appRouter(AuthProvider authProvider) => GoRouter(
   navigatorKey: rootNavigatorKey,
   observers: [defaultRouteObserver],
@@ -23,7 +23,7 @@ GoRouter appRouter(AuthProvider authProvider) => GoRouter(
   routes: [
     ...authRoutes,
     ...notificationsRoutes,
-    ...onboardingRoutes(sliderId),
+    ...onboardingRoutes(onboardingSystemName),
     ...chatRoutes,
     ...slidersRoutes,
   ],
