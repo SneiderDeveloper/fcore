@@ -9,6 +9,7 @@ class DropdownMenuField extends StatelessWidget {
     required this.items,
     required this.onChanged,
     this.width,
+    this.validator,
   });
 
   final String? label;
@@ -16,6 +17,7 @@ class DropdownMenuField extends StatelessWidget {
   final List<DropdownMenuEntry<String>> items;
   final ValueChanged<String?> onChanged;
   final double? width;
+  final String? Function(String?)? validator;
 
   @override
   Widget build(BuildContext context) {
@@ -23,6 +25,7 @@ class DropdownMenuField extends StatelessWidget {
       label: Text(label ?? ''),
       initialSelection: value,
       onSelected: onChanged,
+      validator: validator,
       dropdownMenuEntries: items,
       textStyle: const TextStyle(
         color: Color(0xFF162F48),
