@@ -18,6 +18,8 @@ class OutlinedInputField extends StatelessWidget {
     this.onFieldSubmitted,
     this.inputFormatters,
     this.keyboardType,
+    this.maxLines = 1,
+    this.minLines,
   });
 
   final String label;
@@ -29,6 +31,10 @@ class OutlinedInputField extends StatelessWidget {
   final void Function(String)? onFieldSubmitted;
   final List<TextInputFormatter>? inputFormatters;
   final TextInputType? keyboardType;
+  final int? maxLines;
+  final int? minLines;
+
+  bool get _isMultiline => maxLines == null || maxLines! > 1;
 
   @override
   Widget build(BuildContext context) {
@@ -40,8 +46,12 @@ class OutlinedInputField extends StatelessWidget {
       focusNode: focusNode,
       onFieldSubmitted: onFieldSubmitted,
       inputFormatters: inputFormatters,
-      keyboardType: keyboardType,
-      textInputAction: TextInputAction.search,
+      keyboardType: keyboardType ?? (_isMultiline ? TextInputType.multiline : null),
+      maxLines: isPassword ? 1 : maxLines,
+      minLines: minLines,
+      textInputAction: _isMultiline
+        ? TextInputAction.newline
+        : TextInputAction.search,
       // validator: validator,
       style: const TextStyle(
         color: Color(0xFF1A2B47),
@@ -54,6 +64,7 @@ class OutlinedInputField extends StatelessWidget {
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(color: Color(0xFF40556C), fontSize: 13),
+        alignLabelWithHint: _isMultiline,
         filled: true,
         fillColor: Colors.transparent,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
