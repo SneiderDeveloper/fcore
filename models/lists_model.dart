@@ -46,32 +46,25 @@ class FlightType {
       };
 }
 
-class GreetStatus {
+class ReservationCustomerStatus {
   final int id;
   final String name;
-  final bool? status;
-  final String? color;
 
-  GreetStatus({
+  ReservationCustomerStatus({
     required this.id,
     required this.name,
-    this.status,
-    this.color,
   });
 
-  factory GreetStatus.fromJson(Map<String, dynamic> json) => GreetStatus(
-        id: json["id"] ?? 0,
-        name: json["name"] ?? "",
-        status: json["status"],
-        color: json["color"],
-      );
+  factory ReservationCustomerStatus.fromJson(Map<String, dynamic> json) =>
+    ReservationCustomerStatus(
+      id: json["id"] ?? 0,
+      name: json["name"] ?? "",
+    );
 
   Map<String, dynamic> toJson() => {
-        "id": id,
-        "name": name,
-        "status": status,
-        "color": color,
-      };
+    "id": id,
+    "name": name,
+  };
 }
 
 class Airport {
@@ -98,16 +91,16 @@ class Airport {
   });
 
   factory Airport.fromJson(Map<String, dynamic> json) => Airport(
-        id: json["id"] ?? 0,
-        fullName: json["fullName"] ?? "",
-        airportName: json["airportName"] ?? "",
-        airportIataCode: json["airportIataCode"] ?? "",
-        airportIcaoCode: json["airportIcaoCode"],
-        timezone: json["timezone"],
-        lat: (json["lat"] as num?)?.toDouble() ?? 0.0,
-        lng: (json["lng"] as num?)?.toDouble() ?? 0.0,
-        airportCode: json["airportCode"] ?? "",
-      );
+    id: json["id"] ?? 0,
+    fullName: json["fullName"] ?? "",
+    airportName: json["airportName"] ?? "",
+    airportIataCode: json["airportIataCode"] ?? "",
+    airportIcaoCode: json["airportIcaoCode"],
+    timezone: json["timezone"],
+    lat: (json["lat"] as num?)?.toDouble() ?? 0.0,
+    lng: (json["lng"] as num?)?.toDouble() ?? 0.0,
+    airportCode: json["airportCode"] ?? "",
+  );
 
   Map<String, dynamic> toJson() => {
         "id": id,
