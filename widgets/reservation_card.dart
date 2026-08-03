@@ -30,13 +30,15 @@ class ReservationCard extends StatelessWidget {
     required this.reservation,
     required this.onChatTap,
     required this.onCallTap,
-    required this.screen
+    required this.screen,
+    this.onReturn,
   });
 
   final ReservationData reservation;
   final VoidCallback onChatTap;
   final VoidCallback onCallTap;
   final Widget Function({required int bookingId}) screen;
+  final Future<void> Function()? onReturn;
 
   @override
   Widget build(BuildContext context) {
@@ -46,13 +48,14 @@ class ReservationCard extends StatelessWidget {
     );
 
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
+      onTap: () async {
+        await Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => screen(bookingId: reservation.bookingId),
           ),
         );
+        await onReturn?.call();
       },
       child: AppCard(
         slot: Column(
