@@ -6,14 +6,14 @@ class ListsProvider extends ChangeNotifier {
   final BaseApiService _apiService = BaseApiService();
 
   List<Station> _stations = [];
-  List<GreetStatus> _greetStatuses = [];
+  List<ReservationCustomerStatus> _customerStatuses = [];
   List<FlightType> _flightTypes = [];
   List<Airport> _airports = [];
 
   bool _isLoading = false;
 
   List<Station> get stations => _stations;
-  List<GreetStatus> get greetStatuses => _greetStatuses;
+  List<ReservationCustomerStatus> get customerStatuses => _customerStatuses;
   List<FlightType> get flightTypes => _flightTypes;
   List<Airport> get airports => _airports;
   bool get isLoading => _isLoading;
@@ -26,7 +26,7 @@ class ListsProvider extends ChangeNotifier {
     // Solo cargar lo que falte
     final tasks = <Future>[];
     if (_stations.isEmpty) tasks.add(_fetchStationsInternal());
-    if (_greetStatuses.isEmpty) tasks.add(_fetchGreetStatusesInternal());
+    if (_customerStatuses.isEmpty) tasks.add(_fetchCustomerStatusesInternal());
     if (_flightTypes.isEmpty) tasks.add(_fetchFlightTypesInternal());
     if (_airports.isEmpty) tasks.add(_fetchAirportsInternal());
 
@@ -71,16 +71,18 @@ class ListsProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> _fetchGreetStatusesInternal() async {
+  Future<void> _fetchCustomerStatusesInternal() async {
     try {
-      final response = await _apiService.index('/reservations/v1/greet-statuses');
-      if (response != null && response['data'] != null) {
-        _greetStatuses = (response['data'] as List)
-            .map((item) => GreetStatus.fromJson(item))
-            .toList();
+      final response = await _apiService
+        .index('/reservations/v1/reservation-customer-statuses');
+      final items = response is List ? response : response?['data'];
+      if (items is List) {
+        _customerStatuses = items
+          .map((item) => ReservationCustomerStatus.fromJson(item))
+          .toList();
       }
     } catch (e) {
-      debugPrint('Error fetching greet statuses: $e');
+      debugPrint('Error fetching reservation customer statuses: $e');
     }
   }
 
@@ -89,8 +91,8 @@ class ListsProvider extends ChangeNotifier {
       final response = await _apiService.index('/reservations/v1/flight-types');
       if (response != null && response['data'] != null) {
         _flightTypes = (response['data'] as List)
-            .map((item) => FlightType.fromJson(item))
-            .toList();
+          .map((item) => FlightType.fromJson(item))
+          .toList();
       }
     } catch (e) {
       debugPrint('Error fetching flight types: $e');
@@ -107,10 +109,10 @@ class ListsProvider extends ChangeNotifier {
   }
 
   /// Refresco manual de estados
-  Future<void> fetchGreetStatuses() async {
+  Future<void> fetchCustomerStatuses() async {
     _isLoading = true;
     notifyListeners();
-    await _fetchGreetStatusesInternal();
+    await _fetchCustomerStatusesInternal();
     _isLoading = false;
     notifyListeners();
   }
@@ -136,7 +138,7 @@ class ListsProvider extends ChangeNotifier {
   /// Limpia las listas (útil al cerrar sesión)
   void clear() {
     _stations = [];
-    _greetStatuses = [];
+    _customerStatuses = [];
     _flightTypes = [];
     notifyListeners();
   }
