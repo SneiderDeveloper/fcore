@@ -90,6 +90,27 @@ class BaseApiService {
     }
   }
 
+  Future<dynamic> postMultipart(
+    String route,
+    FormData data, {
+    Duration timeout = const Duration(seconds: 60),
+  }) async {
+    try {
+      final res = await _dio.post(
+        route,
+        data: data,
+        options: Options(
+          sendTimeout: timeout,
+          receiveTimeout: timeout,
+        ),
+      );
+
+      return res.data;
+    } on DioException catch (e) {
+      return _handleError(e);
+    }
+  }
+
   Future<dynamic> patch(
     String route,
     Map<String, dynamic> data, {
