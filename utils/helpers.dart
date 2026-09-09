@@ -40,14 +40,19 @@ Map<String, dynamic> toSnakeCaseMap(Map<String, dynamic> map) {
 }
 
 void showNativeSnackBar(String message, Color color) {
-  snackbarKey.currentState?.showSnackBar(
-    SnackBar(
-      content: Text(message),
-      backgroundColor: color,
-      behavior: SnackBarBehavior.floating,
-      duration: const Duration(seconds: 1), // menos tiempo
-    ),
-  );
+  final messenger = snackbarKey.currentState;
+  if (messenger == null) return;
+
+  messenger
+    ..hideCurrentSnackBar()
+    ..showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: color,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 1),
+      ),
+    );
 }
 
 Color parseColor(String? hexColor) {
