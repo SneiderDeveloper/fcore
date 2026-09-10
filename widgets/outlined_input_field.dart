@@ -20,6 +20,7 @@ class OutlinedInputField extends StatelessWidget {
     this.keyboardType,
     this.maxLines = 1,
     this.minLines,
+    this.enabled = true,
   });
 
   final String label;
@@ -33,6 +34,7 @@ class OutlinedInputField extends StatelessWidget {
   final TextInputType? keyboardType;
   final int? maxLines;
   final int? minLines;
+  final bool enabled;
 
   bool get _isMultiline => maxLines == null || maxLines! > 1;
 
@@ -42,6 +44,7 @@ class OutlinedInputField extends StatelessWidget {
 
     return TextFormField(
       controller: controller,
+      enabled: enabled,
       validator: validator,
       focusNode: focusNode,
       onFieldSubmitted: onFieldSubmitted,
@@ -84,6 +87,10 @@ class OutlinedInputField extends StatelessWidget {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: Color(0xFFC6D2DE), width: 1.5),
+        ),
+        disabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Color(0xFFE0E5ED)),
         ),
       ),
     );
