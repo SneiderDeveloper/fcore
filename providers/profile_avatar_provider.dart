@@ -70,6 +70,14 @@ class ProfileAvatarProvider extends ChangeNotifier {
 
   Future<XFile?> _pickImage(ImageSource source) async {
     try {
+      if (source == ImageSource.gallery) {
+        return await _imagePicker.pickMedia(
+          imageQuality: 80,
+          maxWidth: 1024,
+          maxHeight: 1024,
+        );
+      }
+
       return await _imagePicker.pickImage(
         source: source,
         imageQuality: 80,
@@ -77,7 +85,7 @@ class ProfileAvatarProvider extends ChangeNotifier {
         maxHeight: 1024,
       );
     } on PlatformException catch (e) {
-      _error = e.code == 'camera_access_denied' || e.code == 'photo_access_denied'
+      _error = e.code == 'camera_access_denied' || e.code == 'photo_access_denied' || e.code == 'gallery_access_denied'
         ? 'Grant access to your ${source == ImageSource.camera ? 'camera' : 'photos'} to update the picture'
         : 'The image could not be selected';
       notifyListeners();
