@@ -131,20 +131,21 @@ class _ProfileAvatarEditorView extends StatelessWidget {
                 ],
               ),
             ),
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: _badgeBackground,
-                borderRadius: const BorderRadius.all(Radius.circular(10)),
-                border: Border.all(color: Colors.white, width: 2),
-              ),
-              child: Icon(
-                isUploading ? Icons.hourglass_top_outlined : Icons.edit_outlined,
-                size: 16,
-                color: _badgeIconColor,
-              ),
-            ),
+            // TO-DO
+            // Container(
+            //   width: 32,
+            //   height: 32,
+            //   decoration: BoxDecoration(
+            //     color: _badgeBackground,
+            //     borderRadius: const BorderRadius.all(Radius.circular(10)),
+            //     border: Border.all(color: Colors.white, width: 2),
+            //   ),
+            //   child: Icon(
+            //     isUploading ? Icons.hourglass_top_outlined : Icons.edit_outlined,
+            //     size: 16,
+            //     color: _badgeIconColor,
+            //   ),
+            // ),
           ],
         ),
       ),
