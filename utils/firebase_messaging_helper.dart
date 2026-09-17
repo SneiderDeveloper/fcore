@@ -1,44 +1,71 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
 class FirebaseMessagingHelper {
-  static Future<String?> getTokenSafely() async {
-    if (Platform.isIOS) {
-      final apnsToken = await _waitForApnsToken();
-      if (apnsToken == null) {
-        return null;
-      }
-    }
-
+  static Future<String?> waitForApnsToken() async {
     try {
-      return await FirebaseMessaging.instance.getToken();
-    } catch (e) {
-      final message = e.toString();
-      if (Platform.isIOS && message.contains('apns-token-not-set')) {
-        final apnsToken = await _waitForApnsToken();
-        if (apnsToken == null) {
-          return null;
-        }
-        return await FirebaseMessaging.instance.getToken();
+      if (!Platform.isIOS) {
+        return getTokenSafely();
       }
-      rethrow;
+
+      final messaging = FirebaseMessaging.instance;
+      for (var attempt = 0; attempt < 10; attempt++) {
+        final apnsToken = await messaging.getAPNSToken();
+        if (apnsToken != null && apnsToken.isNotEmpty) {
+          debugPrint('[FirebaseMessagingHelper] APNs token disponible');
+          return apnsToken;
+        }
+        await Future<void>.delayed(const Duration(milliseconds: 500));
+      }
+
+      debugPrint('[FirebaseMessagingHelper] APNs token no disponible tras la espera');
+      return null;
+    } catch (e) {
+      debugPrint('[FirebaseMessagingHelper] Error esperando APNs token: $e');
+      return null;
     }
   }
 
-  static Future<String?> _waitForApnsToken() async {
-    for (var attempt = 0; attempt < 10; attempt++) {
-      try {
-        final apnsToken = await FirebaseMessaging.instance.getAPNSToken();
-        if (apnsToken != null && apnsToken.isNotEmpty) {
-          return apnsToken;
+  static Future<String?> getTokenSafely() async {
+    try {
+      final messaging = FirebaseMessaging.instance;
+
+      if (Platform.isIOS) {
+        final settings = await messaging.getNotificationSettings();
+
+        if (settings.authorizationStatus == AuthorizationStatus.notDetermined) {
+          final permission = await messaging.requestPermission(
+            alert: true,
+            badge: true,
+            sound: true,
+          );
+
+          if (permission.authorizationStatus == AuthorizationStatus.denied) {
+            debugPrint('[FirebaseMessagingHelper] Permiso de notificaciones denegado');
+            return null;
+          }
         }
-      } catch (_) {
-        // Ignore APNS polling errors while the platform token is still being initialized.
+
+        final updatedSettings = await messaging.getNotificationSettings();
+        if (updatedSettings.authorizationStatus == AuthorizationStatus.denied) {
+          debugPrint('[FirebaseMessagingHelper] Notificaciones bloqueadas para iOS');
+          return null;
+        }
+
+        await messaging.setForegroundNotificationPresentationOptions(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
       }
 
-      await Future.delayed(const Duration(milliseconds: 500));
+      final fcmToken = await messaging.getToken();
+      debugPrint('[FirebaseMessagingHelper] FCM token: $fcmToken');
+      return fcmToken;
+    } catch (e) {
+      debugPrint('[FirebaseMessagingHelper] Error al obtener el token: $e');
+      return null;
     }
-
-    return null;
   }
 }
