@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
 class FirebaseMessagingHelper {
+  static Future<String?> waitForApnsToken() => _waitForApnsToken();
+
   static Future<String?> getTokenSafely() async {
     if (Platform.isIOS) {
       final apnsToken = await _waitForApnsToken();
