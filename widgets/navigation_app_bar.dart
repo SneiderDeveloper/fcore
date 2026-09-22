@@ -29,7 +29,10 @@ class NavigationAppBar extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       backgroundColor: backgroundColor ?? const Color(0xFFF0F4F8),
       elevation: 0,
-      leadingWidth: 60,
+      surfaceTintColor: Colors.transparent,
+      scrolledUnderElevation: 0,
+      toolbarHeight: 72,
+      leadingWidth: 68,
       leading: Padding(
         padding: EdgeInsetsDirectional.only(start: 16),
         child: Align(
