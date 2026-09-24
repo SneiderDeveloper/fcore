@@ -96,45 +96,48 @@ class ReservationCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            const Divider(color: Color(0xFFC7D6E4), thickness: 1),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 22,
-                  backgroundImage: NetworkImage(avatarUrl),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        reservation.agentName,
-                        style: const TextStyle(
-                          color: Color(0xFF1D3553),
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      Text(
-                        reservation.agentRole,
-                        style: const TextStyle(
-                          color: Color(0xFF667D97),
-                          fontSize: 14,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                    ],
+            if (reservation.agentName.trim().isNotEmpty &&
+                reservation.agentRole.trim().isNotEmpty) ...[
+              const Divider(color: Color(0xFFC7D6E4), thickness: 1),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 22,
+                    backgroundImage: NetworkImage(avatarUrl),
                   ),
-                ),
-                /*quickActionButton(
-                  icon: Icons.chat_bubble_outline,
-                  onTap: onChatTap,
-                ),*/
-              ],
-            ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          reservation.agentName,
+                          style: const TextStyle(
+                            color: Color(0xFF1D3553),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        Text(
+                          reservation.agentRole,
+                          style: const TextStyle(
+                            color: Color(0xFF667D97),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  /*quickActionButton(
+                    icon: Icons.chat_bubble_outline,
+                    onTap: onChatTap,
+                  ),*/
+                ],
+              ),
+            ],
           ],
         ),
       ),
