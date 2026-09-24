@@ -1,12 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_html/flutter_html.dart';
 import '../utils/helpers.dart';
 import 'app_button.dart';
 
-/// Modal genérica de confirmación: mensaje + botones confirmar/cancelar.
-///
-/// No conoce ninguna regla de negocio: quien la usa decide qué hacer al
-/// confirmar mediante [onConfirm]. Se cierra con `true` al confirmar y con
-/// `false` al cancelar.
 class AppConfirmDialog extends StatefulWidget {
   const AppConfirmDialog({
     super.key,
@@ -22,9 +18,6 @@ class AppConfirmDialog extends StatefulWidget {
   final String? title;
   final String confirmLabel;
   final String cancelLabel;
-
-  /// Acción a ejecutar antes de cerrar. Mientras corre, los botones quedan
-  /// deshabilitados; si lanza un error la modal sigue abierta.
   final Future<void> Function()? onConfirm;
   final String errorMessage;
 
@@ -101,10 +94,26 @@ class _AppConfirmDialogState extends State<AppConfirmDialog> {
                 ),
                 const SizedBox(height: 12),
               ],
-              Text(
-                widget.message,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: messageColor, fontSize: 16),
+              Html(
+                data: widget.message,
+                style: {
+                  'html': Style(
+                    margin: Margins.zero,
+                    padding: HtmlPaddings.zero,
+                  ),
+                  'body': Style(
+                    margin: Margins.zero,
+                    padding: HtmlPaddings.zero,
+                    fontSize: FontSize(16),
+                    color: messageColor,
+                    textAlign: TextAlign.center,
+                  ),
+                  'p': Style(
+                    margin: Margins.zero,
+                    padding: HtmlPaddings.zero,
+                  ),
+                  'strong': Style(fontWeight: FontWeight.w700),
+                },
               ),
               const SizedBox(height: 28),
               Row(
