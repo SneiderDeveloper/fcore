@@ -92,3 +92,13 @@ extension StringExtension on String {
       .join(' ');
   }
 }
+
+extension NullableStringExtension on String? {
+  // The text to show for an optional field, falling back to [placeholder]
+  // when the value is missing or blank.
+  String orPlaceholder([String placeholder = '--']) {
+    final String? value = this;
+
+    return value == null || value.trim().isEmpty ? placeholder : value;
+  }
+}
