@@ -70,8 +70,8 @@ class BaseApiService {
     }
   }
 
-  Future<dynamic> create(String route, Map<String, dynamic> data) async {
-    final snakeData = toSnakeCaseMap(data);
+  Future<dynamic> create(String route, Object data) async {
+    final snakeData = toSnakeCaseDeep(data);
     final res = await _dio.post(route, data: {'attributes': snakeData});
     return res.data;
   }
