@@ -90,8 +90,31 @@ class ApiClient {
     ErrorInterceptorHandler handler,
   ) async {
     if (err.response?.statusCode == 401) {
-      _logger.w("401 Unauthorized: ${err.response}");
-      await deleteTokens();
+      final requestOptions = err.requestOptions;
+      final canRetry =
+          requestOptions.extra['skipTokenRefresh'] != true &&
+          requestOptions.extra['retriedAfterRefresh'] != true;
+
+      if (canRetry && await refreshToken()) {
+        try {
+          final newToken = await _storage.read(key: 'accessToken');
+          requestOptions.extra['retriedAfterRefresh'] = true;
+          if (newToken != null && newToken.isNotEmpty) {
+            requestOptions.headers['Authorization'] = newToken;
+          } else {
+            requestOptions.headers.remove('Authorization');
+          }
+          final response = await dio.fetch(requestOptions);
+          return handler.resolve(response);
+        } on DioException catch (retryError) {
+          if (retryError.response?.statusCode == 401) {
+            _notifyUnauthorized();
+            return handler.reject(retryError);
+          }
+          return handler.next(retryError);
+        }
+      }
+
       _notifyUnauthorized();
       return handler.reject(err);
     }
