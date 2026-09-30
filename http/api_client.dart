@@ -64,6 +64,7 @@ class ApiClient {
         await _isTokenExpiringSoon()) {
       final refreshed = await refreshToken();
       if (!refreshed) {
+        _notifyUnauthorized();
         handler.reject(
           DioException(
             requestOptions: options,
@@ -75,8 +76,10 @@ class ApiClient {
       token = await _storage.read(key: 'accessToken');
     }
 
-    if (token != null && token.isNotEmpty) {
-      options.headers['Authorization'] = '$token';
+    if (token != null &&
+        token.isNotEmpty &&
+        !options.headers.containsKey('Authorization')) {
+      options.headers['Authorization'] = token;
     }
 
     return handler.next(options);
@@ -86,19 +89,20 @@ class ApiClient {
     DioException err,
     ErrorInterceptorHandler handler,
   ) async {
-    _logger.w("wilmer error 71: ${err}");
     if (err.response?.statusCode == 401) {
       _logger.w("401 Unauthorized: ${err.response}");
-      deleteTokens();
-      if (!_isHandlingUnauthorized) {
-        setHandlingUnauthorized(true);
-        onUnauthorized?.call();
-      }
-
+      await deleteTokens();
+      _notifyUnauthorized();
       return handler.reject(err);
     }
 
     return handler.next(err);
+  }
+
+  void _notifyUnauthorized() {
+    if (_isHandlingUnauthorized) return;
+    setHandlingUnauthorized(true);
+    onUnauthorized?.call();
   }
 
   // ========================
@@ -164,10 +168,22 @@ class ApiClient {
         return false;
       }
 
+      final currentAccessToken =
+          await _storage.read(key: 'accessToken') ?? '';
+      final bearerRefreshToken = refreshToken.startsWith('Bearer ')
+          ? refreshToken
+          : 'Bearer $refreshToken';
+
       final response = await dio.post(
         '/profile/v1/auth/refresh-token',
         data: {'refreshToken': refreshToken},
-        options: Options(extra: {'skipTokenRefresh': true}),
+        options: Options(
+          extra: {'skipTokenRefresh': true},
+          headers: {
+            'x-bearer-token': currentAccessToken,
+            'Authorization': bearerRefreshToken,
+          },
+        ),
       );
 
       final responseData = response.data;
