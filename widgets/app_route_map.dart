@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
@@ -9,7 +11,6 @@ class RouteMapPoint {
     required this.position,
     this.title,
     this.snippet,
-    this.icon,
   });
 
   // Unique within the map, it identifies the marker.
@@ -20,171 +21,85 @@ class RouteMapPoint {
   final String? title;
   final String? snippet;
 
-  // Defaults to the standard Google Maps pin.
-  final BitmapDescriptor? icon;
-
   Marker toMarker() => Marker(
     markerId: MarkerId(id),
     position: position,
-    icon: icon ?? BitmapDescriptor.defaultMarker,
-    infoWindow: title == null && snippet == null
-        ? InfoWindow.noText
-        : InfoWindow(title: title, snippet: snippet),
+    infoWindow: InfoWindow(title: title, snippet: snippet),
   );
 }
 
-// Google map that places a marker on every point, optionally joins them with
-// a line, and frames the camera so all of them fit on screen.
-class AppRouteMap extends StatefulWidget {
+// Google map that places a marker on every point, joins them with a line in
+// travel order and frames the camera so all of them fit on screen.
+class AppRouteMap extends StatelessWidget {
   const AppRouteMap({
     super.key,
     required this.points,
-    this.drawRoute = true,
     this.routeColor = const Color(0xFF2292C7),
-    this.routeWidth = 3,
-    this.boundsPadding = 56,
-    this.singlePointZoom = 11,
-    this.initialZoom = 4,
-    this.zoomControlsEnabled = false,
-    this.myLocationButtonEnabled = false,
-    this.placeholder,
-    this.onMapCreated,
-  });
+  }) : assert(points.length > 0, 'AppRouteMap needs at least one point');
+
+  static const double _singlePointZoom = 11;
+  static const double _boundsPadding = 56;
 
   // Places to show, in travel order.
   final List<RouteMapPoint> points;
-
-  final bool drawRoute;
   final Color routeColor;
-  final int routeWidth;
 
-  // Margin in pixels left around the points when framing the camera.
-  final double boundsPadding;
+  LatLngBounds get _bounds {
+    final latitudes = points.map((p) => p.position.latitude);
+    final longitudes = points.map((p) => p.position.longitude);
 
-  // Zoom used when there is a single point, so there is nothing to frame.
-  final double singlePointZoom;
-
-  // Zoom of the first camera position, before the points are framed.
-  final double initialZoom;
-
-  final bool zoomControlsEnabled;
-  final bool myLocationButtonEnabled;
-
-  // Shown instead of the map while there are no points.
-  final Widget? placeholder;
-
-  // Exposes the controller, e.g. to move the camera from the outside.
-  final ValueChanged<GoogleMapController>? onMapCreated;
-
-  @override
-  State<AppRouteMap> createState() => _AppRouteMapState();
-}
-
-class _AppRouteMapState extends State<AppRouteMap> {
-  GoogleMapController? _mapController;
-
-  @override
-  void didUpdateWidget(AppRouteMap oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // Only reframe when the places really changed, so a plain rebuild does
-    // not undo the panning/zooming the user did.
-    if (_signatureOf(widget.points) != _signatureOf(oldWidget.points)) {
-      _frameCamera();
-    }
-  }
-
-  @override
-  void dispose() {
-    _mapController?.dispose();
-    super.dispose();
-  }
-
-  String _signatureOf(List<RouteMapPoint> points) => points
-      .map((p) => '${p.id}:${p.position.latitude},${p.position.longitude}')
-      .join('|');
-
-  LatLng get _center {
-    final latitudes = widget.points.map((p) => p.position.latitude);
-    final longitudes = widget.points.map((p) => p.position.longitude);
-
-    return LatLng(
-      (latitudes.reduce(math.min) + latitudes.reduce(math.max)) / 2,
-      (longitudes.reduce(math.min) + longitudes.reduce(math.max)) / 2,
+    return LatLngBounds(
+      southwest: LatLng(latitudes.reduce(math.min), longitudes.reduce(math.min)),
+      northeast: LatLng(latitudes.reduce(math.max), longitudes.reduce(math.max)),
     );
   }
 
-  void _onMapCreated(GoogleMapController controller) {
-    _mapController = controller;
-    widget.onMapCreated?.call(controller);
-    _frameCamera();
-  }
-
-  void _frameCamera() {
-    final controller = _mapController;
-    if (controller == null || widget.points.isEmpty) return;
-
-    final CameraUpdate update;
-    if (widget.points.length == 1) {
-      update = CameraUpdate.newLatLngZoom(
-        widget.points.first.position,
-        widget.singlePointZoom,
-      );
-    } else {
-      final latitudes = widget.points.map((p) => p.position.latitude);
-      final longitudes = widget.points.map((p) => p.position.longitude);
-      update = CameraUpdate.newLatLngBounds(
-        LatLngBounds(
-          southwest: LatLng(
-            latitudes.reduce(math.min),
-            longitudes.reduce(math.min),
-          ),
-          northeast: LatLng(
-            latitudes.reduce(math.max),
-            longitudes.reduce(math.max),
-          ),
-        ),
-        widget.boundsPadding,
-      );
-    }
+  Future<void> _frameRoute(GoogleMapController controller) async {
+    // A single point is already centered by the initial camera.
+    if (points.length == 1) return;
 
     // The map needs to be laid out before it can frame a bounding box.
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      try {
-        await controller.animateCamera(update);
-      } catch (_) {
-        // Keep the initial camera position if the map is not ready yet.
-      }
-    });
+    await WidgetsBinding.instance.endOfFrame;
+    try {
+      await controller.animateCamera(
+        CameraUpdate.newLatLngBounds(_bounds, _boundsPadding),
+      );
+    } catch (_) {
+      // Keep the initial camera if the map was disposed meanwhile.
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (widget.points.isEmpty) {
-      return widget.placeholder ?? const SizedBox.shrink();
-    }
+    final bounds = _bounds;
 
     return GoogleMap(
-      onMapCreated: _onMapCreated,
+      onMapCreated: _frameRoute,
       initialCameraPosition: CameraPosition(
-        target: _center,
-        zoom: widget.points.length == 1
-          ? widget.singlePointZoom
-          : widget.initialZoom,
+        target: LatLng(
+          (bounds.southwest.latitude + bounds.northeast.latitude) / 2,
+          (bounds.southwest.longitude + bounds.northeast.longitude) / 2,
+        ),
+        zoom: points.length == 1 ? _singlePointZoom : 3,
       ),
-      markers: widget.points.map((point) => point.toMarker()).toSet(),
+      markers: points.map((point) => point.toMarker()).toSet(),
       polylines: {
-        if (widget.drawRoute && widget.points.length > 1)
+        if (points.length > 1)
           Polyline(
-            polylineId: const PolylineId('app-route-map-route'),
-            points: widget.points
-              .map((point) => point.position)
-              .toList(growable: false),
-            color: widget.routeColor,
-            width: widget.routeWidth,
+            polylineId: const PolylineId('route'),
+            points: points.map((point) => point.position).toList(),
+            color: routeColor,
+            width: 3,
+            geodesic: true,
           ),
       },
-      zoomControlsEnabled: widget.zoomControlsEnabled,
-      myLocationButtonEnabled: widget.myLocationButtonEnabled,
+      // Claims the gestures so the map pans even inside a scroll view.
+      gestureRecognizers: {
+        Factory<OneSequenceGestureRecognizer>(EagerGestureRecognizer.new),
+      },
+      zoomControlsEnabled: false,
+      myLocationButtonEnabled: false,
+      mapToolbarEnabled: false,
     );
   }
 }
