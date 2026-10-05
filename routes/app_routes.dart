@@ -74,7 +74,7 @@ String? _handleRedirect(GoRouterState state, AuthProvider authProvider) {
     return null;
   }
   if (loggedIn && (isAtSplash || isAtLogin || isAtOnboarding)) {
-    return AuthRouteNames.home;
+    return PendingDeepLink.consume() ?? AuthRouteNames.home;
   }
 
   return null;
