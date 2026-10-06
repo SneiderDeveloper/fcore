@@ -1,10 +1,62 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:logger/logger.dart';
 import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
+
+enum TokenRefreshResult {
+  success,
+  /// The backend (or a locally expired/missing refresh token) definitively
+  /// rejected the session. Tokens have been deleted.
+  rejected,
+  /// The refresh could not reach the backend (no internet, timeout, 5xx...).
+  /// Tokens are preserved so the session survives until connectivity returns.
+  unavailable,
+}
+
+/// Returns true when [error] means the backend could not be reached or did not
+/// give a definitive answer (offline, timeout, 5xx). In these cases the local
+/// session must be preserved.
+bool isNetworkOrServerUnavailableError(Object error) {
+  if (error is DioException) {
+    switch (error.type) {
+      case DioExceptionType.connectionTimeout:
+      case DioExceptionType.sendTimeout:
+      case DioExceptionType.receiveTimeout:
+      case DioExceptionType.connectionError:
+      case DioExceptionType.cancel:
+        return true;
+      case DioExceptionType.badResponse:
+        final status = error.response?.statusCode ?? 0;
+        return status >= 500 || status == 408 || status == 429;
+      case DioExceptionType.unknown:
+        return error.response == null;
+      case DioExceptionType.badCertificate:
+        return false;
+    }
+  }
+
+  // BaseApiService converts DioExceptions into plain Exceptions.
+  final message = error.toString().toLowerCase();
+  final httpStatus = RegExp(r'http (\d{3})').firstMatch(message);
+  if (httpStatus != null) {
+    final status = int.parse(httpStatus.group(1)!);
+    return status >= 500 || status == 408 || status == 429;
+  }
+  return message.contains('no internet connection') ||
+      message.contains('timeout') ||
+      message.contains('socketexception') ||
+      message.contains('failed host lookup') ||
+      message.contains('connection refused') ||
+      message.contains('connection reset') ||
+      message.contains('connection closed') ||
+      message.contains('network is unreachable') ||
+      message.contains('connection error') ||
+      message.contains('request cancelled');
+}
 
 class ApiClient {
   static const _tokenRefreshBuffer = Duration(seconds: 30);
@@ -14,7 +66,7 @@ class ApiClient {
   late final Dio dio;
   VoidCallback? onUnauthorized;
   bool _isHandlingUnauthorized = false;
-  Future<bool>? _refreshingToken;
+  Future<TokenRefreshResult>? _refreshingToken;
   final _storage = const FlutterSecureStorage(
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
   );
@@ -62,13 +114,24 @@ class ApiClient {
         token.isNotEmpty &&
         options.extra['skipTokenRefresh'] != true &&
         await _isTokenExpiringSoon()) {
-      final refreshed = await refreshToken();
-      if (!refreshed) {
+      final result = await refreshTokenWithResult();
+      if (result == TokenRefreshResult.rejected) {
         _notifyUnauthorized();
         handler.reject(
           DioException(
             requestOptions: options,
             message: 'Unable to refresh the access token',
+          ),
+        );
+        return;
+      }
+      if (result == TokenRefreshResult.unavailable) {
+        // Keep the session: the backend could not be reached.
+        handler.reject(
+          DioException(
+            requestOptions: options,
+            type: DioExceptionType.connectionError,
+            message: 'No internet connection',
           ),
         );
         return;
@@ -95,7 +158,22 @@ class ApiClient {
           requestOptions.extra['skipTokenRefresh'] != true &&
           requestOptions.extra['retriedAfterRefresh'] != true;
 
-      if (canRetry && await refreshToken()) {
+      final refreshResult = canRetry
+          ? await refreshTokenWithResult()
+          : TokenRefreshResult.rejected;
+
+      if (refreshResult == TokenRefreshResult.unavailable) {
+        // The refresh endpoint is unreachable; don't destroy the session.
+        return handler.reject(
+          DioException(
+            requestOptions: requestOptions,
+            type: DioExceptionType.connectionError,
+            message: 'No internet connection',
+          ),
+        );
+      }
+
+      if (refreshResult == TokenRefreshResult.success) {
         try {
           final newToken = await _storage.read(key: 'accessToken');
           requestOptions.extra['retriedAfterRefresh'] = true;
@@ -160,10 +238,40 @@ class ApiClient {
     await _storage.delete(key: 'expiresIn');
     await _storage.delete(key: 'refreshToken');
     await _storage.delete(key: 'refreshExpiresIn');
+    await _storage.delete(key: _cachedUserKey);
     await clearCache();
   }
 
-  Future<bool> refreshToken() async {
+  // ========================
+  // Cached user (offline session restore)
+  // ========================
+
+  static const _cachedUserKey = 'cachedUser';
+
+  Future<void> saveCachedUser(Map<String, dynamic> user) async {
+    try {
+      await _storage.write(key: _cachedUserKey, value: jsonEncode(user));
+    } catch (e) {
+      _logger.w('Unable to cache user data', error: e);
+    }
+  }
+
+  Future<Map<String, dynamic>?> readCachedUser() async {
+    try {
+      final raw = await _storage.read(key: _cachedUserKey);
+      if (raw == null || raw.isEmpty) return null;
+      final decoded = jsonDecode(raw);
+      return decoded is Map ? Map<String, dynamic>.from(decoded) : null;
+    } catch (e) {
+      _logger.w('Unable to read cached user data', error: e);
+      return null;
+    }
+  }
+
+  Future<bool> refreshToken() async =>
+      await refreshTokenWithResult() == TokenRefreshResult.success;
+
+  Future<TokenRefreshResult> refreshTokenWithResult() async {
     final activeRefresh = _refreshingToken;
     if (activeRefresh != null) return activeRefresh;
 
@@ -176,7 +284,7 @@ class ApiClient {
     });
   }
 
-  Future<bool> _refreshToken() async {
+  Future<TokenRefreshResult> _refreshToken() async {
     try {
       final refreshToken = await _storage.read(key: 'refreshToken');
       final refreshExpiresAt = await _storage.read(key: 'refreshExpiresIn');
@@ -188,7 +296,7 @@ class ApiClient {
           parsedRefreshExpiration == null ||
           !parsedRefreshExpiration.isAfter(DateTime.now().toUtc())) {
         await deleteTokens();
-        return false;
+        return TokenRefreshResult.rejected;
       }
 
       final currentAccessToken =
@@ -237,11 +345,16 @@ class ApiClient {
         refreshExpiresAt: refreshExpirationDate ?? parsedRefreshExpiration,
       );
 
-      return true;
+      return TokenRefreshResult.success;
     } catch (e) {
+      if (isNetworkOrServerUnavailableError(e)) {
+        _logger.w('Token refresh unavailable (offline/server). Keeping session.',
+            error: e);
+        return TokenRefreshResult.unavailable;
+      }
       _logger.e('Token refresh failed', error: e);
       await deleteTokens();
-      return false;
+      return TokenRefreshResult.rejected;
     }
   }
 
