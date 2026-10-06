@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../utils/avatar_url_helper.dart';
-import 'package:project_airport_butler_passenger_app/modules/reservations/models/reservation_model.dart';
 import '../widgets/app_button.dart';
 import '../widgets/app_card.dart';
 
@@ -12,7 +11,8 @@ class ReservationData {
     required this.agentName,
     required this.agentRole,
     this.agentImageUrl,
-    required this.status,
+    required this.statusLabel,
+    required this.statusColor,
   });
 
   final int bookingId;
@@ -21,7 +21,8 @@ class ReservationData {
   final String agentName;
   final String agentRole;
   final String? agentImageUrl;
-  final BookingStatus status;
+  final String statusLabel;
+  final Color statusColor;
 }
 
 class ReservationCard extends StatelessWidget {
@@ -73,7 +74,10 @@ class ReservationCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                _StatusTag(status: reservation.status),
+                _StatusTag(
+                  label: reservation.statusLabel,
+                  color: reservation.statusColor,
+                ),
               ],
             ),
             const SizedBox(height: 6),
@@ -161,9 +165,10 @@ class ReservationCard extends StatelessWidget {
 }
 
 class _StatusTag extends StatelessWidget {
-  const _StatusTag({required this.status});
+  const _StatusTag({required this.label, required this.color});
 
-  final BookingStatus status;
+  final String label;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -171,11 +176,11 @@ class _StatusTag extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: status.flutterColor,
+        color: color,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
-        status.name,
+        label,
         style: const TextStyle(
           color: Colors.white,
           fontSize: 13,
