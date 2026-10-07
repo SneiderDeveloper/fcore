@@ -71,6 +71,14 @@ class ApiClient {
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
   );
 
+  // In-memory copy of the access token and its expiration, so requests don't
+  // hit SecureStorage every time. ApiClient is the only writer of these keys,
+  // so saveToken()/deleteTokens() keep it in sync.
+  String? _accessToken;
+  DateTime? _expiresAt;
+  Future<void>? _sessionLoad;
+  int _sessionVersion = 0;
+
   late final CacheOptions cacheOptions;
 
   factory ApiClient() => _instance;
@@ -109,7 +117,7 @@ class ApiClient {
     RequestOptions options,
     RequestInterceptorHandler handler,
   ) async {
-    var token = await _storage.read(key: 'accessToken');
+    var token = await getToken();
     if (token != null &&
         token.isNotEmpty &&
         options.extra['skipTokenRefresh'] != true &&
@@ -136,7 +144,7 @@ class ApiClient {
         );
         return;
       }
-      token = await _storage.read(key: 'accessToken');
+      token = await getToken();
     }
 
     if (token != null &&
@@ -175,7 +183,7 @@ class ApiClient {
 
       if (refreshResult == TokenRefreshResult.success) {
         try {
-          final newToken = await _storage.read(key: 'accessToken');
+          final newToken = await getToken();
           requestOptions.extra['retriedAfterRefresh'] = true;
           if (newToken != null && newToken.isNotEmpty) {
             requestOptions.headers['Authorization'] = newToken;
@@ -216,6 +224,8 @@ class ApiClient {
     String? refreshToken,
     DateTime? refreshExpiresAt,
   }) async {
+    // Memory first: in-flight requests use the new token right away.
+    _setSession(accessToken, expiresAt.toUtc());
     await _storage.write(key: 'accessToken', value: accessToken);
     await _storage.write(
       key: 'expiresIn',
@@ -233,7 +243,8 @@ class ApiClient {
   }
 
   Future<void> deleteTokens() async {
-    // Resetear flag al eliminar tokens
+    // Memory first: stop sending the token even if a delete fails.
+    _setSession(null, null);
     await _storage.delete(key: 'accessToken');
     await _storage.delete(key: 'expiresIn');
     await _storage.delete(key: 'refreshToken');
@@ -299,8 +310,7 @@ class ApiClient {
         return TokenRefreshResult.rejected;
       }
 
-      final currentAccessToken =
-          await _storage.read(key: 'accessToken') ?? '';
+      final currentAccessToken = await getToken() ?? '';
       final bearerRefreshToken = refreshToken.startsWith('Bearer ')
           ? refreshToken
           : 'Bearer $refreshToken';
@@ -359,18 +369,16 @@ class ApiClient {
   }
 
   Future<bool> isTokenExpired() async {
-    final expiresAtStr = await _storage.read(key: 'expiresIn');
-    if (expiresAtStr == null) return true;
-
-    final expiresAt = DateTime.tryParse(expiresAtStr)?.toUtc();
+    await _ensureSessionLoaded();
+    final expiresAt = _expiresAt;
     if (expiresAt == null) return true;
 
     return DateTime.now().toUtc().isAfter(expiresAt);
   }
 
   Future<bool> _isTokenExpiringSoon() async {
-    final expiresAtStr = await _storage.read(key: 'expiresIn');
-    final expiresAt = DateTime.tryParse(expiresAtStr ?? '')?.toUtc();
+    await _ensureSessionLoaded();
+    final expiresAt = _expiresAt;
     if (expiresAt == null) return true;
 
     final refreshDeadline = DateTime.now().toUtc().add(_tokenRefreshBuffer);
@@ -378,7 +386,40 @@ class ApiClient {
   }
 
   Future<String?> getToken() async {
-    return await _storage.read(key: 'accessToken');
+    await _ensureSessionLoaded();
+    return _accessToken;
+  }
+
+  /// Loads the session from SecureStorage only once. If the read fails
+  /// (e.g. iOS Keychain locked), it is not memoized so the next call retries.
+  Future<void> _ensureSessionLoaded() {
+    final pending = _sessionLoad;
+    if (pending != null) return pending;
+
+    final load = _loadSession();
+    _sessionLoad = load;
+    load.catchError((_) {
+      if (identical(_sessionLoad, load)) _sessionLoad = null;
+    });
+    return load;
+  }
+
+  Future<void> _loadSession() async {
+    final version = _sessionVersion;
+    final token = await _storage.read(key: 'accessToken');
+    final expiresAtStr = await _storage.read(key: 'expiresIn');
+    // saveToken()/deleteTokens() ran during the read: their value wins.
+    if (version != _sessionVersion) return;
+
+    _accessToken = token;
+    _expiresAt = DateTime.tryParse(expiresAtStr ?? '')?.toUtc();
+  }
+
+  void _setSession(String? token, DateTime? expiresAt) {
+    _sessionVersion++;
+    _accessToken = token;
+    _expiresAt = expiresAt;
+    _sessionLoad = Future.value();
   }
 
   Future<void> clearCache() async {
