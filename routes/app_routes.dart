@@ -23,7 +23,7 @@ GoRouter appRouter(
   navigatorKey: rootNavigatorKey,
   observers: [defaultRouteObserver],
   initialLocation: AuthRouteNames.splash,
-  refreshListenable: authProvider,
+  refreshListenable: _AuthRedirectNotifier(authProvider),
   redirect: (context, state) => _handleRedirect(state, authProvider),
   onException: _handleRouteException,
   routes: [
@@ -35,6 +35,34 @@ GoRouter appRouter(
     ...additionalRoutes,
   ],
 );
+
+/// Notifies the router only when a value read by [_handleRedirect] changes, so
+/// unrelated AuthProvider updates (loading flags, OTP state...) don't re-run
+/// the redirect.
+class _AuthRedirectNotifier extends ChangeNotifier {
+  _AuthRedirectNotifier(this._auth) : _state = _snapshot(_auth) {
+    _auth.addListener(_onAuthChanged);
+  }
+
+  final AuthProvider _auth;
+  (bool, bool, bool) _state;
+
+  static (bool, bool, bool) _snapshot(AuthProvider auth) =>
+    (auth.isAuthenticated, auth.isInitialLoading, auth.hasSeenWelcome);
+
+  void _onAuthChanged() {
+    final next = _snapshot(_auth);
+    if (next == _state) return;
+    _state = next;
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _auth.removeListener(_onAuthChanged);
+    super.dispose();
+  }
+}
 
 void _handleRouteException(BuildContext context, GoRouterState state, GoRouter router) {
   WidgetsBinding.instance.addPostFrameCallback((_) {
