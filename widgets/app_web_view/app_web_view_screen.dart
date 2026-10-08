@@ -46,7 +46,14 @@ class AppWebViewScreen extends StatelessWidget {
         child: AppWebView(
           url: url,
           redirectUrls: redirectUrls,
-          onRedirect: () => Navigator.of(context).maybePop(true),
+          onRedirect: () {
+            final rootNavigator = Navigator.of(context, rootNavigator: true);
+            if (rootNavigator.canPop()) {
+              rootNavigator.pop(true);
+              return;
+            }
+            Navigator.of(context).maybePop(true);
+          },
         ),
       ),
     );
