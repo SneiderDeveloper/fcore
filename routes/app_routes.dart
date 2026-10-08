@@ -66,8 +66,7 @@ class _AuthRedirectNotifier extends ChangeNotifier {
 
 void _handleRouteException(BuildContext context, GoRouterState state, GoRouter router) {
   WidgetsBinding.instance.addPostFrameCallback((_) {
-    final currentLocation = router.routerDelegate.currentConfiguration.uri.toString();
-    if (currentLocation == NotificationRouteNames.notifications) return;
+    if (router.state.matchedLocation == NotificationRouteNames.notifications) return;
     router.push(NotificationRouteNames.notifications);
   });
 }
