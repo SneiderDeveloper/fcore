@@ -58,6 +58,9 @@ class FirebaseMessagingHelper {
           badge: true,
           sound: true,
         );
+
+        // On iOS, getToken() fails if the APNs token has not yet been registered.
+        if (await waitForApnsToken() == null) return null;
       }
 
       final fcmToken = await messaging.getToken();
