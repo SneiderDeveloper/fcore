@@ -18,15 +18,52 @@ class FlightDetailsGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GridView.count(
+    return Padding(
       padding: padding,
-      crossAxisCount: crossAxisCount,
-      crossAxisSpacing: spacing,
-      mainAxisSpacing: spacing,
-      childAspectRatio: childAspectRatio,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      children: children,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final tileWidth =
+              (constraints.maxWidth - spacing * (crossAxisCount - 1)) /
+              crossAxisCount;
+
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (
+                var start = 0;
+                start < children.length;
+                start += crossAxisCount
+              ) ...[
+                if (start > 0) SizedBox(height: spacing),
+                IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (
+                        var offset = 0;
+                        offset < crossAxisCount;
+                        offset++
+                      ) ...[
+                        if (offset > 0) SizedBox(width: spacing),
+                        Expanded(
+                          child: start + offset < children.length
+                              ? ConstrainedBox(
+                                  constraints: BoxConstraints(
+                                    minHeight: tileWidth / childAspectRatio,
+                                  ),
+                                  child: children[start + offset],
+                                )
+                              : const SizedBox.shrink(),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          );
+        },
+      ),
     );
   }
 }
