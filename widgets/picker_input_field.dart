@@ -8,6 +8,7 @@ class PickerInputField extends StatelessWidget {
     required this.value,
     required this.placeholder,
     required this.onTap,
+    this.errorText,
   });
 
   final String label;
@@ -17,6 +18,9 @@ class PickerInputField extends StatelessWidget {
   final String? value;
   final String placeholder;
   final VoidCallback onTap;
+
+  /// Validation message shown under the field, e.g. from a [FormField].
+  final String? errorText;
 
   static const _labelStyle = TextStyle(
     color: Color(0xFF40556C),
@@ -45,6 +49,7 @@ class PickerInputField extends StatelessWidget {
           border: _border,
           enabledBorder: _border,
           focusedBorder: _border,
+          errorText: errorText,
         ),
         child: Row(
           children: [
