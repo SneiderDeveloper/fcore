@@ -18,6 +18,14 @@ class ListsProvider extends ChangeNotifier {
   List<Airport> get airports => _airports;
   bool get isLoading => _isLoading;
 
+  ReservationCustomerStatus? customerStatusById(int? id) {
+    if (id == null) return null;
+    for (final status in _customerStatuses) {
+      if (status.id == id) return status;
+    }
+    return null;
+  }
+
   /// Inicializa las listas globales si no están cargadas.
   Future<void> init() async {
     // Si ya está cargando, no re-inicializar

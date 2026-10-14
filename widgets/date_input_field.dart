@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import 'picker_input_field.dart';
+
 class DateInputField extends StatelessWidget {
   const DateInputField({
     super.key,
@@ -121,63 +123,12 @@ class DateInputField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final formatted = _formatDate(value);
-    return GestureDetector(
+    return PickerInputField(
+      label: label,
+      icon: Icons.calendar_today_outlined,
+      value: _formatDate(value),
+      placeholder: placeholder ?? 'Select date',
       onTap: () => openPicker(context),
-      child: InputDecorator(
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: const TextStyle(
-            color: Color(0xFF40556C),
-            fontSize: 14,
-          ),
-          floatingLabelBehavior: FloatingLabelBehavior.always,
-          floatingLabelStyle: const TextStyle(
-            color: Color(0xFF40556C),
-            fontSize: 14,
-          ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 18,
-          ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: Color(0xFFC6D2DE)),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: Color(0xFFC6D2DE)),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: Color(0xFFC6D2DE)),
-          ),
-        ),
-        child: Row(
-          children: [
-            const Icon(
-              Icons.calendar_today_outlined,
-              size: 20,
-              color: Color(0xFF40556C),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                formatted ?? placeholder ?? 'Select date',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: formatted == null
-                    ? const Color(0xFF8CA0B3)
-                    : const Color(0xFF1A2B47),
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

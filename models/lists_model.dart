@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 class Station {
   final int id;
   final String name;
@@ -49,22 +51,33 @@ class FlightType {
 class ReservationCustomerStatus {
   final int id;
   final String name;
+  final String? color;
 
   ReservationCustomerStatus({
     required this.id,
     required this.name,
+    this.color,
   });
 
   factory ReservationCustomerStatus.fromJson(Map<String, dynamic> json) =>
     ReservationCustomerStatus(
       id: json["id"] ?? 0,
       name: json["name"] ?? "",
+      color: json["color"]?.toString(),
     );
 
   Map<String, dynamic> toJson() => {
     "id": id,
     "name": name,
+    "color": color,
   };
+
+  Color? get flutterColor {
+    final hex = color?.replaceFirst('#', '') ?? '';
+    if (hex.length != 6) return null;
+    final value = int.tryParse('FF$hex', radix: 16);
+    return value == null ? null : Color(value);
+  }
 }
 
 class Airport {
