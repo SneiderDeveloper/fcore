@@ -10,6 +10,7 @@ class AppConfirmDialog extends StatefulWidget {
     this.title,
     this.confirmLabel = 'Confirm',
     this.cancelLabel = 'Cancel',
+    this.showCancel = true,
     this.onConfirm,
     this.errorMessage = 'Something went wrong, please try again',
   });
@@ -18,6 +19,7 @@ class AppConfirmDialog extends StatefulWidget {
   final String? title;
   final String confirmLabel;
   final String cancelLabel;
+  final bool showCancel;
   final Future<void> Function()? onConfirm;
   final String errorMessage;
 
@@ -27,6 +29,7 @@ class AppConfirmDialog extends StatefulWidget {
     String? title,
     String confirmLabel = 'Confirm',
     String cancelLabel = 'Cancel',
+    bool showCancel = true,
     Future<void> Function()? onConfirm,
   }) {
     return showDialog<bool>(
@@ -37,6 +40,7 @@ class AppConfirmDialog extends StatefulWidget {
         title: title,
         confirmLabel: confirmLabel,
         cancelLabel: cancelLabel,
+        showCancel: showCancel,
         onConfirm: onConfirm,
       ),
     );
@@ -118,16 +122,18 @@ class _AppConfirmDialogState extends State<AppConfirmDialog> {
               const SizedBox(height: 28),
               Row(
                 children: [
-                  Expanded(
-                    child: AppButton(
-                      label: widget.cancelLabel,
-                      variant: AppButtonVariant.outlined,
-                      onPressed: _isLoading
-                        ? null
-                        : () => Navigator.of(context).pop(false),
+                  if (widget.showCancel) ...[
+                    Expanded(
+                      child: AppButton(
+                        label: widget.cancelLabel,
+                        variant: AppButtonVariant.outlined,
+                        onPressed: _isLoading
+                          ? null
+                          : () => Navigator.of(context).pop(false),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
+                    const SizedBox(width: 12),
+                  ],
                   Expanded(
                     child: AppButton(
                       label: widget.confirmLabel,
