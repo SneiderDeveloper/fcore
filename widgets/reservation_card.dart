@@ -16,6 +16,7 @@ class ReservationData {
     this.agentImageUrl,
     required this.statusLabel,
     required this.statusColor,
+    this.statusDescription,
   });
 
   final int bookingId;
@@ -27,6 +28,7 @@ class ReservationData {
   final String? agentImageUrl;
   final String statusLabel;
   final Color statusColor;
+  final String? statusDescription;
 
   String get formattedDateTime {
     if (dateTimeText != null) return dateTimeText!;
@@ -88,6 +90,7 @@ class ReservationCard extends StatelessWidget {
                 StatusTag(
                   label: reservation.statusLabel,
                   color: reservation.statusColor,
+                  description: reservation.statusDescription,
                 ),
               ],
             ),
