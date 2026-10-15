@@ -15,23 +15,26 @@ class BuildSummaryRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: 12,
       children: [
-        Expanded(
-          child: Text(
-            label,
-            style: TextStyle(
-              color: Color(0xFF718499),
-              fontSize: 14,
-              fontWeight: FontWeight.w500
-            ),
+        Text(
+          label,
+          style: TextStyle(
+            color: Color(0xFF718499),
+            fontSize: 14,
+            fontWeight: FontWeight.w500
           ),
         ),
-        Text(
-          value,
-          style: TextStyle(
-            color: color,
-            fontSize: 14,
-            fontWeight: FontWeight.w600
+        Expanded(
+          child: Text(
+            value,
+            textAlign: TextAlign.end,
+            style: TextStyle(
+              color: color,
+              fontSize: 14,
+              fontWeight: FontWeight.w600
+            ),
           ),
         )
       ],
