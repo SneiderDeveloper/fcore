@@ -2,14 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../providers/settings_provider.dart' as settings;
 
-final GlobalKey<ScaffoldMessengerState> snackbarKey = GlobalKey<ScaffoldMessengerState>();
+final GlobalKey<ScaffoldMessengerState> snackbarKey =
+    GlobalKey<ScaffoldMessengerState>();
 
 dynamic getSetting(String name) => settings.getSetting(name);
 
-String replaceParamsApiRoute(
-    String apiRoute,
-    Map<String, dynamic> params,
-    ) {
+String replaceParamsApiRoute(String apiRoute, Map<String, dynamic> params) {
   var url = apiRoute;
   params.forEach((key, value) {
     url = url.replaceAll('{$key}', value.toString());
@@ -32,7 +30,7 @@ Map<String, dynamic> toSnakeCaseMap(Map<String, dynamic> map) {
   map.forEach((key, value) {
     final newKey = key.replaceAllMapped(
       RegExp(r'[A-Z]'),
-          (match) => '_${match.group(0)!.toLowerCase()}',
+      (match) => '_${match.group(0)!.toLowerCase()}',
     );
     result[newKey] = toSnakeCaseDeep(value);
   });
@@ -68,28 +66,31 @@ Color parseColor(String? hexColor) {
   }
 }
 
-String formatDate({ 
-  required String date,
-  String format = 'dd/MM/yyyy',
-}) {
+String formatDate({required String date, String format = 'dd/MM/yyyy'}) {
   try {
-    DateTime parsedDate = DateTime.parse(date);
-    
-    String formattedDate = DateFormat(format).format(parsedDate);
-    
-    return formattedDate;
+    return formatDateTime(date: DateTime.parse(date), format: format);
   } catch (e) {
-    return 'Invalid date'; 
+    return 'Invalid date';
+  }
+}
+
+String formatDateTime({required DateTime date, String format = 'dd/MM/yyyy'}) {
+  try {
+    return DateFormat(format).format(date);
+  } catch (e) {
+    return 'Invalid date';
   }
 }
 
 extension StringExtension on String {
   String capitalizeWords() {
     return split(' ')
-      .map((word) => word.isEmpty
-        ? word
-        : word[0].toUpperCase() + word.substring(1).toLowerCase())
-      .join(' ');
+        .map(
+          (word) => word.isEmpty
+              ? word
+              : word[0].toUpperCase() + word.substring(1).toLowerCase(),
+        )
+        .join(' ');
   }
 }
 
