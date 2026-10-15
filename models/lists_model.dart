@@ -52,11 +52,13 @@ class ReservationCustomerStatus {
   final int id;
   final String name;
   final String? color;
+  final String? description;
 
   ReservationCustomerStatus({
     required this.id,
     required this.name,
     this.color,
+    this.description,
   });
 
   factory ReservationCustomerStatus.fromJson(Map<String, dynamic> json) =>
@@ -64,12 +66,14 @@ class ReservationCustomerStatus {
       id: json["id"] ?? 0,
       name: json["name"] ?? "",
       color: json["color"]?.toString(),
+      description: json["description"]?.toString(),
     );
 
   Map<String, dynamic> toJson() => {
     "id": id,
     "name": name,
     "color": color,
+    "description": description,
   };
 
   Color? get flutterColor {

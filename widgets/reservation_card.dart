@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../utils/avatar_url_helper.dart';
 import '../widgets/app_button.dart';
 import '../widgets/app_card.dart';
+import '../widgets/status_tag.dart';
 
 class ReservationData {
   const ReservationData({
@@ -15,6 +16,7 @@ class ReservationData {
     this.agentImageUrl,
     required this.statusLabel,
     required this.statusColor,
+    this.statusDescription,
   });
 
   final int bookingId;
@@ -26,6 +28,7 @@ class ReservationData {
   final String? agentImageUrl;
   final String statusLabel;
   final Color statusColor;
+  final String? statusDescription;
 
   String get formattedDateTime {
     if (dateTimeText != null) return dateTimeText!;
@@ -84,9 +87,10 @@ class ReservationCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                _StatusTag(
+                StatusTag(
                   label: reservation.statusLabel,
                   color: reservation.statusColor,
+                  description: reservation.statusDescription,
                 ),
               ],
             ),
@@ -170,33 +174,6 @@ class ReservationCard extends StatelessWidget {
       width: 48,
       height: 48,
       onPressed: onTap,
-    );
-  }
-}
-
-class _StatusTag extends StatelessWidget {
-  const _StatusTag({required this.label, required this.color});
-
-  final String label;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 13,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
     );
   }
 }
