@@ -246,6 +246,9 @@ class BaseApiService {
       case DioExceptionType.receiveTimeout:
         throw Exception('Receive timeout');
 
+      case DioExceptionType.transformTimeout:
+        throw Exception('Response transformation timeout');
+
       case DioExceptionType.badCertificate:
         throw Exception('Bad SSL certificate');
 
