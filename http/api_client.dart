@@ -69,7 +69,11 @@ class ApiClient {
   bool _isHandlingUnauthorized = false;
   Future<TokenRefreshResult>? _refreshingToken;
   final _storage = const FlutterSecureStorage(
-    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+    aOptions: AndroidOptions(
+      migrateOnAlgorithmChange: true,
+      migrateWithBackup: true,
+      resetOnError: false,
+    ),
   );
 
   // In-memory copy of the access token and its expiration, so requests don't

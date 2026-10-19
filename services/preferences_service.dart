@@ -6,7 +6,11 @@ class PreferencesService {
   PreferencesService._internal();
 
   final _storage = const FlutterSecureStorage(
-    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+    aOptions: AndroidOptions(
+      migrateOnAlgorithmChange: true,
+      migrateWithBackup: true,
+      resetOnError: false,
+    ),
   );
 
   Future<bool> hasSeenWelcome() async {
