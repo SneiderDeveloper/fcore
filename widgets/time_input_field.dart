@@ -12,12 +12,17 @@ class TimeInputField extends StatelessWidget {
     required this.onChanged,
     this.placeholder,
     this.validator,
+    this.use24HourFormat = false,
   });
 
   final String label;
   final TimeOfDay? value;
   final ValueChanged<TimeOfDay> onChanged;
   final String? placeholder;
+
+  /// Shows the time, and opens the picker, in 24-hour format (`14:30`)
+  /// instead of 12-hour (`2:30 PM`).
+  final bool use24HourFormat;
 
   /// When set, the field joins the enclosing [Form] and shows the
   /// validation message under it.
@@ -27,6 +32,12 @@ class TimeInputField extends StatelessWidget {
     final picked = await showTimePicker(
       context: context,
       initialTime: value ?? TimeOfDay.now(),
+      builder: use24HourFormat
+        ? (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+            child: child!,
+          )
+        : null,
     );
     if (picked == null) return;
     onChanged(picked);
@@ -34,7 +45,8 @@ class TimeInputField extends StatelessWidget {
 
   String? _formatTime(TimeOfDay? time) {
     if (time == null) return null;
-    return DateFormat('h:mm a').format(DateTime(2000, 1, 1, time.hour, time.minute));
+    final format = use24HourFormat ? 'HH:mm' : 'h:mm a';
+    return DateFormat(format).format(DateTime(2000, 1, 1, time.hour, time.minute));
   }
 
   Widget _buildPicker(BuildContext context, {String? errorText}) {
