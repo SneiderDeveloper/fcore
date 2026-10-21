@@ -19,9 +19,6 @@ class TimeInputField extends StatelessWidget {
   final TimeOfDay? value;
   final ValueChanged<TimeOfDay> onChanged;
   final String? placeholder;
-
-  /// Shows the time, and opens the picker, in 24-hour format (`14:30`)
-  /// instead of 12-hour (`2:30 PM`).
   final bool use24HourFormat;
 
   /// When set, the field joins the enclosing [Form] and shows the
