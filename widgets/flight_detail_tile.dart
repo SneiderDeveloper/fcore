@@ -15,8 +15,8 @@ class FlightDetailTile extends StatelessWidget {
   const FlightDetailTile.gate({Key? key, String? gate})
     : this(key: key, label: 'Gate:', value: gate);
 
-  const FlightDetailTile.seat({Key? key, String? seat})
-    : this(key: key, label: 'Seat', value: seat);
+  const FlightDetailTile.terminal({Key? key, String? terminal})
+    : this(key: key, label: 'Terminal', value: terminal);
 
   const FlightDetailTile.scheduledTime({
     Key? key,
@@ -52,14 +52,17 @@ class FlightDetailTile extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            value.orPlaceholder(),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Color(0xFF40556C),
-              fontSize: 22,
-              fontWeight: FontWeight.w600,
+          // Shrinks a value too wide for the tile instead of cutting it off.
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: AlignmentDirectional.centerStart,
+            child: Text(
+              value.orPlaceholder(),
+              style: const TextStyle(
+                color: Color(0xFF40556C),
+                fontSize: 22,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],

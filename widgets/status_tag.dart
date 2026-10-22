@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'app_button.dart';
+import 'app_confirm_dialog.dart';
 
 class StatusTag extends StatelessWidget {
   const StatusTag({
@@ -37,74 +37,14 @@ class StatusTag extends StatelessWidget {
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () => _StatusInfoDialog.show(
+      onTap: () => AppConfirmDialog.show(
         context,
         title: label,
-        description: description!.trim(),
+        message: description!.trim(),
+        confirmLabel: 'Got it',
+        showCancel: false,
       ),
       child: tag,
-    );
-  }
-}
-
-class _StatusInfoDialog extends StatelessWidget {
-  const _StatusInfoDialog({required this.title, required this.description});
-
-  final String title;
-  final String description;
-
-  static const Color titleColor = Color(0xFF1A2B47);
-  static const Color messageColor = Color(0xFF475569);
-
-  static Future<void> show(
-    BuildContext context, {
-    required String title,
-    required String description,
-  }) {
-    return showDialog<void>(
-      context: context,
-      barrierColor: Colors.black.withValues(alpha: 0.5),
-      builder: (_) => _StatusInfoDialog(title: title, description: description),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: titleColor,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              description,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: messageColor, fontSize: 16),
-            ),
-            const SizedBox(height: 28),
-            AppButton(
-              label: 'Got it',
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

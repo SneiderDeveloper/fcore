@@ -16,6 +16,7 @@ class DateInputField extends StatelessWidget {
     this.placeholder,
     this.minDateTime,
     this.onSelectionRejected,
+    this.validator,
   });
 
   final String label;
@@ -30,6 +31,7 @@ class DateInputField extends StatelessWidget {
   final DateTime? minDateTime;
 
   final ValueChanged<DateTime>? onSelectionRejected;
+  final FormFieldValidator<DateTime>? validator;
 
   Future<void> openPicker(BuildContext context) async {
     final now = DateTime.now();
@@ -121,14 +123,27 @@ class DateInputField extends StatelessWidget {
     return '$datePart - ${DateFormat('h:mm a').format(date)}';
   }
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildPicker(BuildContext context, {String? errorText}) {
     return PickerInputField(
       label: label,
       icon: Icons.calendar_today_outlined,
       value: _formatDate(value),
       placeholder: placeholder ?? 'Select date',
+      errorText: errorText,
       onTap: () => openPicker(context),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final validator = this.validator;
+    if (validator == null) return _buildPicker(context);
+
+    return FormField<DateTime>(
+      key: ValueKey(value),
+      initialValue: value,
+      validator: validator,
+      builder: (field) => _buildPicker(context, errorText: field.errorText),
     );
   }
 }
