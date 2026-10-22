@@ -18,6 +18,9 @@ class FlightDetailTile extends StatelessWidget {
   const FlightDetailTile.terminal({Key? key, String? terminal})
     : this(key: key, label: 'Terminal', value: terminal);
 
+  const FlightDetailTile.seat({Key? key, String? seat})
+    : this(key: key, label: 'Seat', value: seat);
+
   const FlightDetailTile.scheduledTime({
     Key? key,
     String? time,
