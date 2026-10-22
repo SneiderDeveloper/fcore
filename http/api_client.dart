@@ -26,6 +26,7 @@ bool isNetworkOrServerUnavailableError(Object error) {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
       case DioExceptionType.receiveTimeout:
+      case DioExceptionType.transformTimeout:
       case DioExceptionType.connectionError:
       case DioExceptionType.cancel:
         return true;
@@ -68,7 +69,11 @@ class ApiClient {
   bool _isHandlingUnauthorized = false;
   Future<TokenRefreshResult>? _refreshingToken;
   final _storage = const FlutterSecureStorage(
-    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+    aOptions: AndroidOptions(
+      migrateOnAlgorithmChange: true,
+      migrateWithBackup: true,
+      resetOnError: false,
+    ),
   );
 
   // In-memory copy of the access token and its expiration, so requests don't
