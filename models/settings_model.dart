@@ -3,7 +3,7 @@ class AppSetting {
   final dynamic value;
   final String? type;
   final Map<String, dynamic>? props;
-  final String? plainValue;
+  final dynamic plainValue;
 
   AppSetting({
     required this.name,
@@ -19,7 +19,7 @@ class AppSetting {
       value: json['value'],
       type: json['type'] as String?,
       props: json['props'] != null ? Map<String, dynamic>.from(json['props']) : null,
-      plainValue: json['plainValue'] as String?,
+      plainValue: json['plainValue'],
     );
   }
 }
