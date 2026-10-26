@@ -20,7 +20,7 @@ class AppUpdateCoordinator with WidgetsBindingObserver {
 
   bool _isChecking = false;
   bool _isDialogOpen = false;
-  String? _dismissedVersion;
+  String? _dismissedRelease;
 
   void start() {
     WidgetsBinding.instance.addObserver(this);
@@ -40,7 +40,7 @@ class AppUpdateCoordinator with WidgetsBindingObserver {
     try {
       final status = await service.check();
       if (!status.hasUpdate) return;
-      if (!status.isMandatory && status.storeVersion == _dismissedVersion) {
+      if (!status.isMandatory && status.releaseKey == _dismissedRelease) {
         return;
       }
       await _present(status);
@@ -65,7 +65,7 @@ class AppUpdateCoordinator with WidgetsBindingObserver {
     );
     _isDialogOpen = false;
 
-    if (!status.isMandatory) _dismissedVersion = status.storeVersion;
+    if (!status.isMandatory) _dismissedRelease = status.releaseKey;
   }
 
   Future<void> _openStore(String? url) async {
