@@ -36,12 +36,16 @@ class AppStoreVersionSource implements StoreVersionSource {
 
     final body = jsonDecode(response.data ?? '{}') as Map<String, dynamic>;
     final results = body['results'];
-    if (results is! List || results.isEmpty) return null;
+    if (results is! List || results.isEmpty) {
+      throw StateError('App Store listing not found for $bundleId in $country.');
+    }
 
     final app = results.first as Map<String, dynamic>;
     final version = app['version'] as String?;
     final url = app['trackViewUrl'] as String?;
-    if (version == null || url == null) return null;
+    if (version == null || url == null) {
+      throw const FormatException('App Store version or URL missing.');
+    }
 
     return StoreVersionInfo(version: version, storeUrl: url);
   }

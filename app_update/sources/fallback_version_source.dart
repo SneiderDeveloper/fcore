@@ -19,8 +19,9 @@ class FallbackVersionSource implements StoreVersionSource {
         return await source.fetchLatestVersion();
       } catch (error) {
         debugPrint('${source.runtimeType} failed: $error');
+        if (identical(source, sources.last)) rethrow;
       }
     }
-    return null;
+    throw StateError('No update sources configured.');
   }
 }

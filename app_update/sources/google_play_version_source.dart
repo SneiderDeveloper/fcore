@@ -30,7 +30,9 @@ class GooglePlayVersionSource implements StoreVersionSource {
     );
 
     final version = _versionPattern.firstMatch(response.data ?? '')?.group(1);
-    if (version == null) return null;
+    if (version == null) {
+      throw const FormatException('Google Play version not found in listing.');
+    }
 
     return StoreVersionInfo(
       version: version,

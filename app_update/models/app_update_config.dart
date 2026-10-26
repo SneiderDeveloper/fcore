@@ -1,17 +1,11 @@
-/// Project-specific settings for the update check. Reusable across apps:
-/// only this object changes from one project to another.
+/// Update policy. Store identifiers are read from the installed application.
 class AppUpdateConfig {
   const AppUpdateConfig({
-    required this.androidPackageId,
-    required this.iosBundleId,
     this.forceUpdate = false,
     this.minimumRequiredVersion,
     this.storeCountry = 'us',
     this.requestTimeout = const Duration(seconds: 8),
   });
-
-  final String androidPackageId;
-  final String iosBundleId;
 
   /// When true, any newer store version blocks the app until updated.
   final bool forceUpdate;

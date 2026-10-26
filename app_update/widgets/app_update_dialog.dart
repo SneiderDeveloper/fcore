@@ -14,7 +14,8 @@ class AppUpdateDialog extends StatelessWidget {
     this.mandatoryMessage =
         'You must update the app to the latest version to keep using it.',
     this.updateLabel = 'Update',
-    this.laterLabel = 'Later',
+    this.isOpeningStore = false,
+    this.errorMessage,
   });
 
   final AppUpdateStatus status;
@@ -23,7 +24,8 @@ class AppUpdateDialog extends StatelessWidget {
   final String optionalMessage;
   final String mandatoryMessage;
   final String updateLabel;
-  final String laterLabel;
+  final bool isOpeningStore;
+  final String? errorMessage;
 
   static const Color _titleColor = Color(0xFF1A2B47);
   static const Color _messageColor = Color(0xFF475569);
@@ -33,7 +35,7 @@ class AppUpdateDialog extends StatelessWidget {
     final mandatory = status.isMandatory;
 
     return PopScope(
-      canPop: !mandatory,
+      canPop: false,
       child: Dialog(
         backgroundColor: Colors.transparent,
         insetPadding: const EdgeInsets.symmetric(horizontal: 24),
@@ -43,50 +45,50 @@ class AppUpdateDialog extends StatelessWidget {
             color: Colors.white,
             borderRadius: BorderRadius.circular(24),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: _titleColor,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                mandatory ? mandatoryMessage : optionalMessage,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: _messageColor, fontSize: 16),
-              ),
-              if (status.storeVersion != null) ...[
-                const SizedBox(height: 8),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
                 Text(
-                  'v${status.currentVersion} → v${status.storeVersion}',
-                  style: const TextStyle(color: _messageColor, fontSize: 13),
+                  title,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: _titleColor,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ],
-              const SizedBox(height: 28),
-              Row(
-                children: [
-                  if (!mandatory) ...[
-                    Expanded(
-                      child: AppButton(
-                        label: laterLabel,
-                        variant: AppButtonVariant.outlined,
-                        onPressed: () => Navigator.of(context).pop(),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                  ],
-                  Expanded(
-                    child: AppButton(label: updateLabel, onPressed: onUpdate),
+                const SizedBox(height: 12),
+                Text(
+                  mandatory ? mandatoryMessage : optionalMessage,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: _messageColor, fontSize: 16),
+                ),
+                if (status.storeVersion != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'v${status.currentVersion} → v${status.storeVersion}',
+                    style: const TextStyle(color: _messageColor, fontSize: 13),
                   ),
                 ],
-              ),
-            ],
+                if (errorMessage != null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    errorMessage!,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 28),
+                AppButton(
+                  label: updateLabel,
+                  isLoading: isOpeningStore,
+                  onPressed: isOpeningStore ? null : onUpdate,
+                ),
+              ],
+            ),
           ),
         ),
       ),

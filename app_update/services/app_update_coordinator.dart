@@ -1,75 +1,93 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../models/app_update_status.dart';
-import '../widgets/app_update_dialog.dart';
 import 'app_update_service.dart';
+import 'app_update_store_launcher.dart';
 
-/// Runs the check on start and on every resume, and presents the dialog.
-/// Attach with [start] and release with [dispose].
-class AppUpdateCoordinator with WidgetsBindingObserver {
+/// Keeps update state independently of navigation and refreshes it on resume.
+class AppUpdateCoordinator extends ChangeNotifier with WidgetsBindingObserver {
   AppUpdateCoordinator({
     required this.service,
-    required this.navigatorKey,
+    this.storeLauncher = const AppUpdateStoreLauncher(),
   });
 
   final AppUpdateService service;
-  final GlobalKey<NavigatorState> navigatorKey;
+  final AppUpdateStoreLauncher storeLauncher;
 
+  bool _started = false;
+  bool _disposed = false;
   bool _isChecking = false;
-  bool _isDialogOpen = false;
-  String? _dismissedRelease;
+  bool _checkAgain = false;
+  bool _isOpeningStore = false;
+  AppUpdateStatus? _status;
+  String? _storeError;
+
+  AppUpdateStatus? get status => _status;
+  bool get isOpeningStore => _isOpeningStore;
+  String? get storeError => _storeError;
 
   void start() {
+    if (_started || _disposed) return;
+    _started = true;
     WidgetsBinding.instance.addObserver(this);
-    unawaited(_checkAndPresent());
+    unawaited(_check());
   }
 
-  void dispose() => WidgetsBinding.instance.removeObserver(this);
+  @override
+  void dispose() {
+    _disposed = true;
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) unawaited(_checkAndPresent());
+    if (state == AppLifecycleState.resumed) unawaited(_check());
   }
 
-  Future<void> _checkAndPresent() async {
-    if (_isChecking || _isDialogOpen) return;
+  Future<void> _check() async {
+    if (_disposed) return;
+    if (_isChecking) {
+      _checkAgain = true;
+      return;
+    }
     _isChecking = true;
     try {
       final status = await service.check();
-      if (!status.hasUpdate) return;
-      if (!status.isMandatory && status.releaseKey == _dismissedRelease) {
-        return;
-      }
-      await _present(status);
+      if (_disposed) return;
+      _status = status.hasUpdate ? status : null;
+      notifyListeners();
+    } catch (error, stackTrace) {
+      // A failed refresh must not dismiss an update already detected.
+      debugPrint('Unable to check store version: $error\n$stackTrace');
     } finally {
       _isChecking = false;
+      if (_checkAgain && !_disposed) {
+        _checkAgain = false;
+        unawaited(_check());
+      }
     }
   }
 
-  Future<void> _present(AppUpdateStatus status) async {
-    final overlayContext = navigatorKey.currentState?.overlay?.context;
-    if (overlayContext == null || !overlayContext.mounted) return;
-
-    _isDialogOpen = true;
-    await showDialog<void>(
-      context: overlayContext,
-      barrierDismissible: !status.isMandatory,
-      barrierColor: Colors.black.withValues(alpha: 0.5),
-      builder: (_) => AppUpdateDialog(
-        status: status,
-        onUpdate: () => _openStore(status.storeUrl),
-      ),
-    );
-    _isDialogOpen = false;
-
-    if (!status.isMandatory) _dismissedRelease = status.releaseKey;
-  }
-
-  Future<void> _openStore(String? url) async {
-    if (url == null) return;
-    await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+  Future<void> openStore() async {
+    if (_disposed || _isOpeningStore) return;
+    _isOpeningStore = true;
+    _storeError = null;
+    notifyListeners();
+    try {
+      final url = _status?.storeUrl;
+      if (url == null) {
+        throw StateError('Unable to open the update store URL.');
+      }
+      await storeLauncher.open(url);
+    } catch (error, stackTrace) {
+      debugPrint('Unable to open update store: $error\n$stackTrace');
+      _storeError = 'Unable to open the store. Please try again.';
+    } finally {
+      _isOpeningStore = false;
+      if (!_disposed) notifyListeners();
+    }
   }
 }

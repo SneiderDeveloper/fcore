@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../models/app_update_config.dart';
@@ -12,28 +11,31 @@ import '../sources/play_in_app_version_source.dart';
 import '../sources/store_version_source.dart';
 import '../utils/version_comparator.dart';
 
-/// Decides whether the installed app needs an update. Never throws: any
-/// failure resolves to [AppUpdateType.none] so it can't block the app.
+/// Decides whether the installed app needs an update.
+/// Failures propagate so callers can retain the last confirmed update.
 class AppUpdateService {
   AppUpdateService({required this.config, StoreVersionSource? source})
-      : _source = source ?? _defaultSource(config);
+    : _source = source;
 
   final AppUpdateConfig config;
   final StoreVersionSource? _source;
 
-  static StoreVersionSource? _defaultSource(AppUpdateConfig config) {
+  static StoreVersionSource? _defaultSource(
+    AppUpdateConfig config,
+    String installedPackageId,
+  ) {
     if (Platform.isAndroid) {
       return FallbackVersionSource([
-        PlayInAppVersionSource(packageId: config.androidPackageId),
+        PlayInAppVersionSource(packageId: installedPackageId),
         GooglePlayVersionSource(
-          packageId: config.androidPackageId,
+          packageId: installedPackageId,
           timeout: config.requestTimeout,
         ),
       ]);
     }
     if (Platform.isIOS) {
       return AppStoreVersionSource(
-        bundleId: config.iosBundleId,
+        bundleId: installedPackageId,
         country: config.storeCountry,
         timeout: config.requestTimeout,
       );
@@ -43,26 +45,21 @@ class AppUpdateService {
 
   Future<AppUpdateStatus> check() async {
     final package = await PackageInfo.fromPlatform();
-    final source = _source;
+    final source = _source ?? _defaultSource(config, package.packageName);
     if (source == null) return AppUpdateStatus.none(package.version);
 
-    try {
-      final store = await source.fetchLatestVersion();
-      if (store == null || !_isNewer(package, store)) {
-        return AppUpdateStatus.none(package.version);
-      }
-
-      return AppUpdateStatus(
-        type: _resolveType(package.version),
-        currentVersion: package.version,
-        storeVersion: store.version,
-        storeBuildNumber: store.buildNumber,
-        storeUrl: store.storeUrl,
-      );
-    } catch (error) {
-      debugPrint('Unable to check store version: $error');
+    final store = await source.fetchLatestVersion();
+    if (store == null || !_isNewer(package, store)) {
       return AppUpdateStatus.none(package.version);
     }
+
+    return AppUpdateStatus(
+      type: _resolveType(package.version),
+      currentVersion: package.version,
+      storeVersion: store.version,
+      storeBuildNumber: store.buildNumber,
+      storeUrl: store.storeUrl,
+    );
   }
 
   bool _isNewer(PackageInfo installed, StoreVersionInfo store) {
