@@ -1,0 +1,82 @@
+import 'dart:io';
+
+import 'package:package_info_plus/package_info_plus.dart';
+
+import '../models/app_update_config.dart';
+import '../models/app_update_status.dart';
+import '../sources/app_store_version_source.dart';
+import '../sources/fallback_version_source.dart';
+import '../sources/google_play_version_source.dart';
+import '../sources/play_in_app_version_source.dart';
+import '../sources/store_version_source.dart';
+import '../utils/version_comparator.dart';
+
+/// Decides whether the installed app needs an update.
+/// Failures propagate so callers can retain the last confirmed update.
+class AppUpdateService {
+  AppUpdateService({required this.config, StoreVersionSource? source})
+    : _source = source;
+
+  final AppUpdateConfig config;
+  final StoreVersionSource? _source;
+
+  static StoreVersionSource? _defaultSource(
+    AppUpdateConfig config,
+    String installedPackageId,
+  ) {
+    if (Platform.isAndroid) {
+      return FallbackVersionSource([
+        PlayInAppVersionSource(packageId: installedPackageId),
+        GooglePlayVersionSource(
+          packageId: installedPackageId,
+          timeout: config.requestTimeout,
+        ),
+      ]);
+    }
+    if (Platform.isIOS) {
+      return AppStoreVersionSource(
+        bundleId: installedPackageId,
+        country: config.storeCountry,
+        timeout: config.requestTimeout,
+      );
+    }
+    return null;
+  }
+
+  Future<AppUpdateStatus> check() async {
+    final package = await PackageInfo.fromPlatform();
+    final source = _source ?? _defaultSource(config, package.packageName);
+    if (source == null) return AppUpdateStatus.none(package.version);
+
+    final store = await source.fetchLatestVersion();
+    if (store == null || !_isNewer(package, store)) {
+      return AppUpdateStatus.none(package.version);
+    }
+
+    return AppUpdateStatus(
+      type: _resolveType(package.version),
+      currentVersion: package.version,
+      storeVersion: store.version,
+      storeBuildNumber: store.buildNumber,
+      storeUrl: store.storeUrl,
+    );
+  }
+
+  bool _isNewer(PackageInfo installed, StoreVersionInfo store) {
+    final build = store.buildNumber;
+    if (build != null) {
+      return (int.tryParse(installed.buildNumber) ?? 0) < build;
+    }
+    return VersionComparator.isLowerThan(installed.version, store.version!);
+  }
+
+  AppUpdateType _resolveType(String current) {
+    final minimum = config.minimumRequiredVersion;
+    final belowMinimum =
+        minimum != null && VersionComparator.isLowerThan(current, minimum);
+
+    return config.forceUpdate || belowMinimum
+        ? AppUpdateType.mandatory
+        : AppUpdateType.optional;
+  }
+}
