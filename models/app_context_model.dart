@@ -8,7 +8,7 @@ class AppContext {
   final String? description;
   final bool isActive;
   final bool allowLocalLogin;
-  final Map<String, dynamic> settings;
+  final List<String> settings;
   final String? appleHtmlCallback;
   final List<dynamic> allSettings;
   final Map<String, bool> permissions;
@@ -24,8 +24,8 @@ class AppContext {
       description = json['description'] as String?,
       isActive = json['isActive'] as bool,
       allowLocalLogin = json['allowLocalLogin'] as bool,
-      settings = Map<String, dynamic>.unmodifiable(
-        json['settings'] as Map<String, dynamic>,
+      settings = List<String>.unmodifiable(
+        (json['settings'] as List).cast<String>(),
       ),
       appleHtmlCallback = json['appleHtmlCallback'] as String?,
       allSettings = List<dynamic>.unmodifiable(json['allSettings'] as List),
