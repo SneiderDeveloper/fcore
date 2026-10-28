@@ -13,6 +13,7 @@ class TimeInputField extends StatelessWidget {
     this.placeholder,
     this.validator,
     this.use24HourFormat = false,
+    this.initialEntryMode = TimePickerEntryMode.dial,
   });
 
   final String label;
@@ -20,6 +21,7 @@ class TimeInputField extends StatelessWidget {
   final ValueChanged<TimeOfDay> onChanged;
   final String? placeholder;
   final bool use24HourFormat;
+  final TimePickerEntryMode initialEntryMode;
 
   /// When set, the field joins the enclosing [Form] and shows the
   /// validation message under it.
@@ -29,6 +31,7 @@ class TimeInputField extends StatelessWidget {
     final picked = await showTimePicker(
       context: context,
       initialTime: value ?? TimeOfDay.now(),
+      initialEntryMode: initialEntryMode,
       builder: use24HourFormat
         ? (context, child) => MediaQuery(
             data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
