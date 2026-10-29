@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
 import '../http/api_client.dart';
+import '../http/api_exception.dart';
 import '../utils/helpers.dart';
 
 class BaseApiService {
@@ -71,9 +72,13 @@ class BaseApiService {
   }
 
   Future<dynamic> create(String route, Object data) async {
-    final snakeData = toSnakeCaseDeep(data);
-    final res = await _dio.post(route, data: {'attributes': snakeData});
-    return res.data;
+    try {
+      final snakeData = toSnakeCaseDeep(data);
+      final res = await _dio.post(route, data: {'attributes': snakeData});
+      return res.data;
+    } on DioException catch (e) {
+      return _handleError(e);
+    }
   }
 
   Future<dynamic> post(String route, Map<String, dynamic> data) async {
@@ -253,27 +258,10 @@ class BaseApiService {
         throw Exception('Bad SSL certificate');
 
       case DioExceptionType.badResponse:
-        final status = e.response?.statusCode;
-        final data = e.response?.data;
-
-        String errorMsg = 'Server error';
-        if (data is Map) {
-          final messages = data['messages'];
-          if (messages is List && messages.isNotEmpty) {
-            final first = messages.first;
-            if (first is Map && first['message'] is String) {
-              errorMsg = first['message'] as String;
-            }
-          } else if (data['message'] is String) {
-            errorMsg = data['message'] as String;
-          } else if (data['data'] is Map && data['data']['message'] is String) {
-            errorMsg = data['data']['message'] as String;
-          }
-        } else if (data != null) {
-          errorMsg = data.toString();
-        }
-
-        throw Exception('HTTP $status - $errorMsg');
+        throw ApiException.fromResponse(
+          e.response?.statusCode,
+          e.response?.data,
+        );
 
       case DioExceptionType.cancel:
         throw Exception('Request cancelled');
