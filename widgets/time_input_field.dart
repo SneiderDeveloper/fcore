@@ -13,7 +13,7 @@ class TimeInputField extends StatelessWidget {
     this.placeholder,
     this.validator,
     this.use24HourFormat = false,
-    this.initialEntryMode = TimePickerEntryMode.dial,
+    this.initialEntryMode = TimePickerEntryMode.input,
   });
 
   final String label;
