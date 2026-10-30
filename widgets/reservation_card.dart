@@ -75,6 +75,13 @@ class ReservationCard extends StatelessWidget {
         await onReturn?.call();
       },
       child: AppCard(
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0F162F48),
+            offset: Offset(0, 4),
+            blurRadius: 16,
+          ),
+        ],
         slot: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
