@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../utils/avatar_url_helper.dart';
+import '../utils/concierge_role_label.dart';
 import '../widgets/app_button.dart';
 import '../widgets/app_card.dart';
 import '../widgets/status_tag.dart';
@@ -13,6 +14,7 @@ class ReservationData {
     this.dateTimeText,
     required this.agentName,
     required this.agentRole,
+    this.additionalAgentNames = const [],
     this.agentImageUrl,
     required this.statusLabel,
     required this.statusColor,
@@ -25,6 +27,7 @@ class ReservationData {
   final String? dateTimeText;
   final String agentName;
   final String agentRole;
+  final List<String> additionalAgentNames;
   final String? agentImageUrl;
   final String statusLabel;
   final Color statusColor;
@@ -137,13 +140,26 @@ class ReservationCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          reservation.agentName,
-                          style: const TextStyle(
-                            color: Color(0xFF1D3553),
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                reservation.agentName,
+                                style: const TextStyle(
+                                  color: Color(0xFF1D3553),
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Icon(
+                              Icons.star,
+                              color: Color(0xFF2292C7),
+                              size: 18,
+                              semanticLabel: 'Primary Concierge',
+                            ),
+                          ],
                         ),
                         Text(
                           reservation.agentRole,
@@ -153,6 +169,19 @@ class ReservationCard extends StatelessWidget {
                             fontWeight: FontWeight.w400,
                           ),
                         ),
+                        for (var index = 0;
+                            index < reservation.additionalAgentNames.length;
+                            index++) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            '${conciergeRoleLabel(index + 1)}: ${reservation.additionalAgentNames[index]}',
+                            style: const TextStyle(
+                              color: Color(0xFF667D97),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
